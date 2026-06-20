@@ -1,0 +1,62 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 420" width="400" height="420">
+  <defs>
+    <linearGradient id="cyberGlow" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#00D4FF;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#7B2FBE;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="shieldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#0A0E17;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#141B2B;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Outer Ring / Tech Halo -->
+  <circle cx="200" cy="170" r="105" fill="url(#shieldGrad)" stroke="url(#cyberGlow)" stroke-width="3"/>
+  <circle cx="200" cy="170" r="95" fill="none" stroke="#00D4FF" stroke-width="1" opacity="0.2" stroke-dasharray="8 6"/>
+  
+  <!-- Aegis Shield (Greek-inspired) -->
+  <path d="M 200 95 L 265 125 L 265 185 C 265 225 230 255 200 270 C 170 255 135 225 135 185 L 135 125 Z" 
+        fill="none" stroke="url(#cyberGlow)" stroke-width="6" stroke-linejoin="round"/>
+  
+  <!-- Inner Shield Accent -->
+  <path d="M 200 110 L 245 135 L 245 185 C 245 215 220 240 200 250 C 180 240 155 215 155 185 L 155 135 Z" 
+        fill="none" stroke="#00D4FF" stroke-width="1.5" opacity="0.4"/>
+  
+  <!-- Artificial Intelligence / Neural Network Core -->
+  <circle cx="200" cy="175" r="9" fill="#00D4FF"/>
+  <circle cx="200" cy="175" r="4" fill="#FFFFFF"/>
+  
+  <!-- Neural Connections -->
+  <line x1="200" y1="175" x2="170" y2="155" stroke="#7B2FBE" stroke-width="3"/>
+  <line x1="200" y1="175" x2="230" y2="155" stroke="#7B2FBE" stroke-width="3"/>
+  <line x1="200" y1="175" x2="200" y2="210" stroke="#7B2FBE" stroke-width="3"/>
+  <line x1="200" y1="175" x2="170" y2="195" stroke="#00D4FF" stroke-width="2" opacity="0.7"/>
+  <line x1="200" y1="175" x2="230" y2="195" stroke="#00D4FF" stroke-width="2" opacity="0.7"/>
+  <line x1="200" y1="175" x2="185" y2="145" stroke="#7B2FBE" stroke-width="1.5" opacity="0.5"/>
+  <line x1="200" y1="175" x2="215" y2="145" stroke="#7B2FBE" stroke-width="1.5" opacity="0.5"/>
+  
+  <!-- Neural Nodes -->
+  <circle cx="170" cy="155" r="5" fill="#7B2FBE"/>
+  <circle cx="230" cy="155" r="5" fill="#7B2FBE"/>
+  <circle cx="200" cy="210" r="5" fill="#7B2FBE"/>
+  <circle cx="170" cy="195" r="4" fill="#00D4FF" opacity="0.9"/>
+  <circle cx="230" cy="195" r="4" fill="#00D4FF" opacity="0.9"/>
+  <circle cx="185" cy="145" r="3" fill="#7B2FBE" opacity="0.7"/>
+  <circle cx="215" cy="145" r="3" fill="#7B2FBE" opacity="0.7"/>
+
+  <!-- Tech Decorative Lines -->
+  <path d="M 160 135 L 240 135" stroke="url(#cyberGlow)" stroke-width="2" opacity="0.6"/>
+  <path d="M 175 225 L 225 225" stroke="url(#cyberGlow)" stroke-width="2" opacity="0.4"/>
+  
+  <!-- Main Title -->
+  <text x="200" y="320" font-family="'Courier New', Courier, monospace" font-size="52" font-weight="bold" fill="#FFFFFF" text-anchor="middle" letter-spacing="10">
+    AEGIS
+  </text>
+  
+  <!-- Subtitle -->
+  <text x="200" y="350" font-family="Arial, sans-serif" font-size="13" font-weight="600" fill="#00D4FF" text-anchor="middle" letter-spacing="5" opacity="0.9">
+    AUTONOMOUS OPS
+  </text>
+  
+  <line x1="150" y1="365" x2="250" y2="365" stroke="#7B2FBE" stroke-width="2" opacity="0.6"/>
+</svg>
