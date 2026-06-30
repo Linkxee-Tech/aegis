@@ -10,8 +10,9 @@ tracks active sockets so we can clean up subscriptions on disconnect.
 import logging
 from typing import Any
 
-from fastapi import WebSocket, WebSocketDisconnect
+from fastapi import HTTPException, WebSocket, WebSocketDisconnect, status
 
+from backend.services.auth import get_websocket_auth_context
 from backend.orchestrator.message_bus import (
     TOPIC_AGENT_STATUS_CHANGED,
     TOPIC_APPROVAL_REQUIRED,
@@ -53,13 +54,21 @@ manager = ConnectionManager()
 
 
 async def websocket_endpoint(websocket: WebSocket) -> None:
+    try:
+        get_websocket_auth_context(websocket)
+    except HTTPException:
+        await websocket.close(code=status.WS_1008_POLICY_VIOLATION)
+        return
+
     await manager.connect(websocket)
     bus = get_message_bus()
 
     async def forward(topic: str):
-        async def handler(message: dict[str, Any]) -> None:
+        async def handler(mcp_message: dict[str, Any]) -> None:
             try:
-                await websocket.send_json({"type": TOPIC_TO_EVENT_TYPE[topic], "payload": message})
+                # Extract original payload from MCP JSON-RPC envelope
+                payload = mcp_message.get("params", mcp_message)
+                await websocket.send_json({"type": TOPIC_TO_EVENT_TYPE[topic], "payload": payload})
             except Exception:
                 logger.exception("Failed to forward event on topic '%s' to client", topic)
         return handler
@@ -91,6 +100,12 @@ async def websocket_incident_endpoint(websocket: WebSocket, incident_id: str) ->
     Satisfies the Phase 2 checklist: '/ws/incidents/{incident_id} established.
     Real-time streaming of agent thoughts and actions is functional.'
     """
+    try:
+        get_websocket_auth_context(websocket)
+    except HTTPException:
+        await websocket.close(code=status.WS_1008_POLICY_VIOLATION)
+        return
+
     await manager.connect(websocket)
     bus = get_message_bus()
 
@@ -103,11 +118,14 @@ async def websocket_incident_endpoint(websocket: WebSocket, incident_id: str) ->
     }
 
     async def forward_if_relevant(topic: str):
-        async def handler(message: dict[str, Any]) -> None:
+        async def handler(mcp_message: dict[str, Any]) -> None:
+            # Extract original payload from MCP JSON-RPC envelope
+            payload = mcp_message.get("params", mcp_message)
+            
             # Always forward agent status changes; filter incident events by id
-            if topic == TOPIC_AGENT_STATUS_CHANGED or message.get("incidentId") == incident_id or message.get("id") == incident_id:
+            if topic == TOPIC_AGENT_STATUS_CHANGED or payload.get("incidentId") == incident_id or payload.get("id") == incident_id:
                 try:
-                    await websocket.send_json({"type": TOPIC_TO_EVENT_TYPE[topic], "payload": message})
+                    await websocket.send_json({"type": TOPIC_TO_EVENT_TYPE[topic], "payload": payload})
                 except Exception:
                     pass
         return handler

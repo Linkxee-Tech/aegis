@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { api, type SimulateScenario } from '@/services/api'
+import { api, ApiError, type SimulateScenario } from '@/services/api'
 import { cx } from '@/utils/format'
 
 interface SimulateIncidentProps {
@@ -30,8 +30,14 @@ export function SimulateIncident({ onTriggered, isLive }: SimulateIncidentProps)
         // Demo-mode: simulate locally without a backend call
         onTriggered(`Demo mode: simulating "${selected}" — connect the backend to run the real pipeline`)
       }
-    } catch {
-      onTriggered('Could not trigger simulation — is the backend running?')
+    } catch (error) {
+      if (error instanceof ApiError && error.status === 403) {
+        onTriggered('Simulation blocked — you need an operator token in Settings')
+      } else if (error instanceof ApiError && error.status === 401) {
+        onTriggered('Simulation blocked — sign in with an operator token in Settings')
+      } else {
+        onTriggered('Could not trigger simulation — is the backend running?')
+      }
     } finally {
       setRunning(false)
       setOpen(false)

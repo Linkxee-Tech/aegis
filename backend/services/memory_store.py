@@ -72,13 +72,14 @@ class MemoryStore:
                 """
                 SELECT id, incident_title, root_cause, fix_applied, occurrences, last_seen,
                        embedding::text AS embedding_text,
-                       1 - (embedding <=> $1::vector) AS similarity
+                       (1 - (embedding <=> $1::vector)) * EXP(-EXTRACT(EPOCH FROM (now() - last_seen)) / ($3::float * 86400)) AS similarity
                 FROM memory_records
-                ORDER BY embedding <=> $1::vector
+                ORDER BY similarity DESC
                 LIMIT $2
                 """,
                 vector_literal,
                 top_k,
+                settings.memory_decay_days,
             )
             records = [
                 {

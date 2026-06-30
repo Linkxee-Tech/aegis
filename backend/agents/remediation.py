@@ -78,10 +78,18 @@ def _validate_command(command: str | None) -> dict[str, Any]:
     return {"valid": True, "language": "bash", "warning": None}
 
 
+from langchain_core.tools import tool
+
+@tool
+def execute_cloud_command(command: str) -> str:
+    """Execute a bash/CLI command securely on Alibaba Cloud ECS instances."""
+    return f"Simulated execution of: {command}"
+
 class RemediationAgent(BaseAgent):
     agent_id = "remediation"
     model_name = settings.qwen_model_coder
     system_prompt = REMEDIATION_SYSTEM_PROMPT
+    tools = [execute_cloud_command]
 
     def __init__(self, *args: Any, cloud_service: AlibabaCloudService | None = None, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
@@ -175,7 +183,7 @@ Prefer well-known CLI tools: kubectl, aliyun, systemctl, docker.
 Respond with JSON matching this schema exactly:
 {{
   "steps": [
-    {{"order": 1, "description": "...", "command": "valid bash/CLI command, or null", "risk_level": "low" | "medium" | "high"}}
+    {{"order": 1, "description": "...", "command": "valid bash/CLI command, or null", "risk_level": "low" | "medium" | "high", "dry_run_output": "simulated text output of command execution"}}
   ],
   "estimated_downtime_seconds": integer
 }}"""

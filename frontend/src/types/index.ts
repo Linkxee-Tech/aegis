@@ -106,3 +106,32 @@ export interface ApprovalRequest {
   requestedAt: string
   expiresInSeconds: number
 }
+
+export interface AdminServiceStatus {
+  name: string
+  status: string
+  detail: string
+}
+
+export interface AdminOverview {
+  environment: string
+  apiPrefix: string
+  authEnabled: boolean
+  authMode: string
+  backendStatus: string
+  startupOk: boolean
+  startupCheckedAt: string
+  qwenConfigured: boolean
+  databaseConfigured: boolean
+  redisConfigured: boolean
+  monitoredServers: string[]
+  agentCount: number
+  activeIncidentCount: number
+  pendingApprovals: number
+  reportCount: number
+  memoryRecordCount: number
+  docsUrl: string
+  supportedScenarios: string[]
+  serviceMatrix: AdminServiceStatus[]
+  recentSignals: string[]
+}

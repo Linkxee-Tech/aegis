@@ -1,4 +1,4 @@
-import type { Agent, Incident, MemoryRecord, IncidentReport, SystemHealth } from '@/types'
+import type { AdminOverview, Agent, Incident, MemoryRecord, IncidentReport, SystemHealth } from '@/types'
 
 /**
  * All demo timestamps below are computed relative to whenever this module is
@@ -293,3 +293,32 @@ export const reports: IncidentReport[] = [
     status: 'final',
   },
 ]
+
+export const adminOverview: AdminOverview = {
+  environment: 'development',
+  apiPrefix: '/api',
+  authEnabled: false,
+  authMode: 'Open demo',
+  backendStatus: 'operational',
+  startupOk: true,
+  startupCheckedAt: new Date().toISOString(),
+  qwenConfigured: false,
+  databaseConfigured: true,
+  redisConfigured: true,
+  monitoredServers: ['prod-ecs-03.ap-southeast-1', 'prod-ecs-01.ap-southeast-1'],
+  agentCount: 5,
+  activeIncidentCount: 1,
+  pendingApprovals: 1,
+  reportCount: reports.length,
+  memoryRecordCount: memoryRecords.length,
+  docsUrl: '/docs',
+  supportedScenarios: ['cpu_spike', 'memory_leak', 'disk_io', 'connection_pool', 'tls_failure'],
+  serviceMatrix: [
+    { name: 'Qwen Cloud', status: 'Needs attention', detail: 'Add QWEN_API_KEY to .env' },
+    { name: 'PostgreSQL', status: 'Configured', detail: 'Database URL available' },
+    { name: 'Redis', status: 'Configured', detail: 'Redis URL available' },
+    { name: 'Alibaba Cloud', status: 'Demo mode', detail: 'Cloud credentials not configured' },
+    { name: 'WebSocket Stream', status: 'Live', detail: '1 incident currently tracked' },
+  ],
+  recentSignals: ['Qwen API key missing; demo mode will continue', 'All core modules imported cleanly'],
+}

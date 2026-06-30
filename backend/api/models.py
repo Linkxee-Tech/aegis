@@ -186,6 +186,38 @@ class ApprovalResponse(BaseModel):
     new_status: IncidentStatus
 
 
+class AdminServiceStatus(BaseModel):
+    name: str
+    status: str
+    detail: str
+
+
+class AdminOverview(BaseModel):
+    environment: str
+    api_prefix: str = Field(alias="apiPrefix")
+    auth_enabled: bool = Field(alias="authEnabled")
+    auth_mode: str = Field(alias="authMode")
+    backend_status: str = Field(alias="backendStatus")
+    startup_ok: bool = Field(alias="startupOk")
+    startup_checked_at: str = Field(alias="startupCheckedAt")
+    qwen_configured: bool = Field(alias="qwenConfigured")
+    database_configured: bool = Field(alias="databaseConfigured")
+    redis_configured: bool = Field(alias="redisConfigured")
+    monitored_servers: list[str] = Field(alias="monitoredServers")
+    agent_count: int = Field(alias="agentCount")
+    active_incident_count: int = Field(alias="activeIncidentCount")
+    pending_approvals: int = Field(alias="pendingApprovals")
+    report_count: int = Field(alias="reportCount")
+    memory_record_count: int = Field(alias="memoryRecordCount")
+    docs_url: str = Field(alias="docsUrl")
+    supported_scenarios: list[str] = Field(alias="supportedScenarios")
+    service_matrix: list[AdminServiceStatus] = Field(alias="serviceMatrix")
+    recent_signals: list[str] = Field(alias="recentSignals")
+
+    class Config:
+        populate_by_name = True
+
+
 # --- WebSocket event envelope ---
 
 class WsEventType(str, Enum):

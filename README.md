@@ -34,7 +34,7 @@ cd aegis
 
 # 2. Set up environment
 cp .env.example .env
-# Edit .env with your QWEN_API_KEY and Alibaba Cloud credentials
+# Edit .env with your QWEN_API_KEY, Alibaba Cloud credentials, and any auth keys
 
 # 3. Start infrastructure
 cd infrastructure
@@ -43,7 +43,7 @@ cd ..
 
 # 4. Backend setup
 python -m venv venv
-source venv/bin/activate  # or `venv\Scripts\activate` on Windows
+source venv/bin/activate  # or venv\Scripts\activate on Windows
 pip install -r requirements.txt
 python backend/main.py
 
@@ -72,6 +72,10 @@ instead of relying only on the initial page-load fetch. Approve/Reject buttons
 call the real `/incidents/{id}/approve` and `/incidents/{id}/reject` endpoints
 when live, and fall back to a local optimistic update in demo mode so the
 approval flow is still fully clickable in a standalone walkthrough.
+
+If gateway auth is enabled, the frontend reads the token from Settings and
+sends it as a Bearer token for REST requests and as `?token=` for WebSocket
+connections.
 
 Routing is real client-side routing (`react-router-dom`) — `/`, `/incidents`,
 `/reports`, `/memory`, and `/settings` are all directly navigable, refreshable,
@@ -109,6 +113,10 @@ aegis/
 | `DATABASE_URL` | PostgreSQL connection string (pgvector extension required) |
 | `REDIS_URL` | Redis connection string |
 | `ALIBABA_CLOUD_ACCESS_KEY` / `ALIBABA_CLOUD_SECRET_KEY` | Alibaba Cloud credentials |
+| `AUTH_ENABLED` | Turns on gateway auth for live operations |
+| `VIEWER_API_KEYS` | Comma-separated API keys allowed to read dashboard data |
+| `OPERATOR_API_KEYS` | Comma-separated API keys allowed to approve/reject/simulate |
+| `ADMIN_API_KEYS` | Comma-separated API keys allowed to access every endpoint |
 | `MEMORY_SIMILARITY_THRESHOLD` | Minimum similarity to consider a memory "matched" (default 0.85) |
 | `MEMORY_AUTO_APPLY_THRESHOLD` | Minimum confidence to skip human approval (default 0.92) |
 | `REQUIRE_APPROVAL_FOR_HIGH_RISK` | If true, high-risk steps always need a human regardless of memory confidence |

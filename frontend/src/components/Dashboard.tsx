@@ -9,9 +9,11 @@ import { useIncidents } from '@/hooks/useIncidents'
 import { useAgents, useSystemHealth, useMemoryRecords } from '@/hooks/useLiveData'
 import { useWebSocket } from '@/hooks/useWebSocket'
 import { useToast } from '@/hooks/useToast'
+import { ApiError } from '@/services/api'
 import { IconCheck } from './icons'
 
-const WS_BASE = import.meta.env.VITE_WS_URL?.replace('/ws', '') ||
+const WS_BASE =
+  import.meta.env.VITE_WS_URL?.replace('/ws', '') ||
   `ws://${typeof window !== 'undefined' ? window.location.host : 'localhost:8000'}`
 
 export function Dashboard() {
@@ -25,9 +27,7 @@ export function Dashboard() {
 
   // Use the protocol-compatible per-incident WebSocket when there's an active incident,
   // falling back to the general /ws channel when all clear.
-  const wsUrl = activeIncident
-    ? `${WS_BASE}/ws/${activeIncident.id}`
-    : `${WS_BASE}/ws`
+  const wsUrl = activeIncident ? `${WS_BASE}/ws/${activeIncident.id}` : `${WS_BASE}/ws`
 
   const { status: wsStatus } = useWebSocket({
     url: wsUrl,
@@ -41,14 +41,23 @@ export function Dashboard() {
     if (wsStatus === 'open') {
       showToast('Connected to live incident stream')
     }
-  }, [wsStatus])
+  }, [wsStatus, showToast])
+
   const historyIncidents = incidents
 
   async function handleApprove(incidentId: string) {
     try {
       await approve(incidentId)
       showToast('Remediation approved — executing on live server')
-    } catch {
+    } catch (error) {
+      if (error instanceof ApiError && error.status === 403) {
+        showToast('Approval blocked — your token does not have operator access')
+        return
+      }
+      if (error instanceof ApiError && error.status === 401) {
+        showToast('Approval blocked — add an operator token in Settings')
+        return
+      }
       showToast('Approval failed — the request may have expired')
     }
   }
@@ -57,7 +66,15 @@ export function Dashboard() {
     try {
       await reject(incidentId, reason)
       showToast(reason ? 'Sent back to Diagnostician with your note' : 'Remediation rejected')
-    } catch {
+    } catch (error) {
+      if (error instanceof ApiError && error.status === 403) {
+        showToast('Rejection blocked — your token does not have operator access')
+        return
+      }
+      if (error instanceof ApiError && error.status === 401) {
+        showToast('Rejection blocked — add an operator token in Settings')
+        return
+      }
       showToast('Rejection failed — please try again')
     }
   }
@@ -81,9 +98,7 @@ export function Dashboard() {
           <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-full bg-signal-remediation/10">
             <IconCheck className="h-5 w-5 text-signal-remediation" />
           </div>
-          <p className="mt-3 text-[14px] font-medium text-bone-100">
-            No active incidents — all systems nominal
-          </p>
+          <p className="mt-3 text-[14px] font-medium text-bone-100">No active incidents — all systems nominal</p>
           <p className="mt-1 text-[12.5px] text-bone-500">
             The Detective Agent is watching. You'll see a panel here the moment something needs attention.
           </p>

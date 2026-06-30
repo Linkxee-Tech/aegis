@@ -261,11 +261,20 @@ class Coordinator:
         await self._publish_agent_status("reporter", "thinking")
         report = await self.reporter.process({"incident": incident, "downtime_minutes": downtime_minutes})
         await self._publish_agent_status("reporter", "active")
-        incident["report"] = report.data
+        report_data = {
+            **report.data,
+            "id": f"rpt-{incident_id.lower()}",
+            "incidentId": incident_id,
+            "title": f"{incident['title']} — {incident['service']}",
+            "generatedAt": datetime.now(timezone.utc).isoformat(),
+            "status": "final",
+            "downtimeMinutes": downtime_minutes,
+        }
+        incident["report"] = report_data
         await self._emit_timeline_event(
             incident_id, agent_id="reporter", title="Incident report generated", detail=report.data["summary"]
         )
-        await self.bus.publish(TOPIC_REPORT_GENERATED, {"incidentId": incident_id, "report": report.data})
+        await self.bus.publish(TOPIC_REPORT_GENERATED, {"incidentId": incident_id, "report": report_data})
         await self.bus.publish(TOPIC_INCIDENT_UPDATED, incident)
         await self._publish_agent_status("reporter", "idle")
 

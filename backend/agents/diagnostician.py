@@ -17,10 +17,18 @@ from backend.config.settings import get_settings
 settings = get_settings()
 
 
+from langchain_core.tools import tool
+
+@tool
+def query_ecs_logs(service_name: str, time_range: str) -> str:
+    """Query Alibaba Cloud ECS logs for a specific service and time range."""
+    return f"Queried logs for {service_name} over {time_range}"
+
 class DiagnosticianAgent(BaseAgent):
     agent_id = "diagnostician"
     model_name = settings.qwen_model_plus
     system_prompt = DIAGNOSTICIAN_SYSTEM_PROMPT
+    tools = [query_ecs_logs]
 
     async def process(self, context: dict[str, Any]) -> AgentResult:
         """

@@ -7,6 +7,7 @@ the project root for the variables this expects.
 """
 
 from functools import lru_cache
+from pathlib import Path
 from typing import Literal
 
 from pydantic import Field
@@ -14,7 +15,11 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
-    model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
+    model_config = SettingsConfigDict(
+        env_file=str(Path(__file__).resolve().parents[2] / ".env"),
+        env_file_encoding="utf-8",
+        extra="ignore",
+    )
 
     # --- App ---
     app_name: str = "Aegis"
@@ -22,6 +27,10 @@ class Settings(BaseSettings):
     log_level: str = "INFO"
     api_prefix: str = "/api"
     cors_origins: list[str] = Field(default_factory=lambda: ["http://localhost:3000"])
+    auth_enabled: bool = False
+    viewer_api_keys: str = ""
+    operator_api_keys: str = ""
+    admin_api_keys: str = ""
 
     # --- Qwen Cloud (DashScope OpenAI-compatible endpoint) ---
     qwen_api_key: str = Field(default="", description="API key for Qwen Cloud / DashScope")
@@ -45,6 +54,7 @@ class Settings(BaseSettings):
     # --- Memory / Vector matching ---
     memory_similarity_threshold: float = 0.85
     memory_auto_apply_threshold: float = 0.92
+    memory_decay_days: int = 30
 
     # --- Human approval ---
     approval_timeout_seconds: int = 900
@@ -53,6 +63,10 @@ class Settings(BaseSettings):
     # --- Monitoring sources (Detective Agent) ---
     monitored_servers: list[str] = Field(default_factory=list)
     poll_interval_seconds: int = 15
+
+    def parsed_api_keys(self, raw_value: str) -> set[str]:
+        """Return a normalized set of API keys from a comma-separated env value."""
+        return {value.strip() for value in raw_value.split(",") if value.strip()}
 
 
 @lru_cache

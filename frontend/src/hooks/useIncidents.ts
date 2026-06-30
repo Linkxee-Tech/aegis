@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useState } from 'react'
 import type { Incident } from '@/types'
 import { incidentHistory } from '@/data/mockData'
-import { api } from '@/services/api'
+import { ApiError, api } from '@/services/api'
+import { useAuthVersion } from './useAuthSession'
 
 /**
  * Provides incident data to components. Attempts to load from the live API;
@@ -17,6 +18,7 @@ export function useIncidents() {
   const [incidents, setIncidents] = useState<Incident[]>(incidentHistory)
   const [isLive, setIsLive] = useState(false)
   const [loading, setLoading] = useState(true)
+  const authVersion = useAuthVersion()
 
   const refresh = useCallback(async () => {
     try {
@@ -25,9 +27,14 @@ export function useIncidents() {
         setIncidents(data)
         setIsLive(true)
       }
-    } catch {
-      // expected when no backend is running — demo data remains active
-      setIsLive(false)
+    } catch (error) {
+      if (error instanceof ApiError && (error.status === 401 || error.status === 403)) {
+        // The backend is reachable but the current token does not authorize access.
+        setIsLive(true)
+      } else {
+        // expected when no backend is running — demo data remains active
+        setIsLive(false)
+      }
     } finally {
       setLoading(false)
     }
@@ -35,7 +42,7 @@ export function useIncidents() {
 
   useEffect(() => {
     refresh()
-  }, [refresh])
+  }, [refresh, authVersion])
 
   const approve = useCallback(
     async (incidentId: string) => {
@@ -82,4 +89,3 @@ export function useIncidents() {
 
   return { incidents, isLive, loading, refresh, approve, reject }
 }
-

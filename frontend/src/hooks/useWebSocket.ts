@@ -1,4 +1,6 @@
 import { useEffect, useRef, useState, useCallback } from 'react'
+import { getAuthToken } from '@/services/api'
+import { useAuthVersion } from './useAuthSession'
 
 export type WsStatus = 'connecting' | 'open' | 'closed' | 'error'
 
@@ -16,13 +18,19 @@ interface UseWebSocketOptions {
 export function useWebSocket({ url, onMessage, enabled = true }: UseWebSocketOptions) {
   const [status, setStatus] = useState<WsStatus>('connecting')
   const wsRef = useRef<WebSocket | null>(null)
+  const authVersion = useAuthVersion()
 
   useEffect(() => {
     if (!enabled) return
     let didCancel = false
 
     try {
-      const ws = new WebSocket(url)
+      const authToken = getAuthToken()
+      const wsUrl = new URL(url)
+      if (authToken) {
+        wsUrl.searchParams.set('token', authToken)
+      }
+      const ws = new WebSocket(wsUrl.toString())
       wsRef.current = ws
 
       ws.onopen = () => !didCancel && setStatus('open')
@@ -45,7 +53,7 @@ export function useWebSocket({ url, onMessage, enabled = true }: UseWebSocketOpt
       didCancel = true
       wsRef.current?.close()
     }
-  }, [url, enabled])
+  }, [url, enabled, authVersion])
 
   const send = useCallback((data: unknown) => {
     if (wsRef.current?.readyState === WebSocket.OPEN) {

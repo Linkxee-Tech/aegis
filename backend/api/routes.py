@@ -9,8 +9,9 @@ see a populated dashboard without first wiring up real infrastructure.
 
 import logging
 from datetime import datetime, timezone
+from typing import Any
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Response
 from pydantic import BaseModel
 
 from backend.api.demo_data import (
@@ -20,8 +21,12 @@ from backend.api.demo_data import (
     demo_reports,
     demo_system_health,
 )
-from backend.api.models import RejectionPayload
+from backend.api.models import AdminOverview, AdminServiceStatus, RejectionPayload
+from backend.config.settings import get_settings
 from backend.orchestrator.coordinator import get_coordinator
+from backend.services.auth import require_roles
+from backend.services.alibaba_cloud import AlibabaCloudNotConfiguredError, AlibabaCloudService
+from backend.services.report_export import build_report_filename, build_report_pdf
 from backend.services.startup_health import run_startup_health_check
 
 logger = logging.getLogger("aegis.routes")
@@ -30,7 +35,7 @@ router = APIRouter()
 
 # ── System health ─────────────────────────────────────────────────────────────
 
-@router.get("/health")
+@router.get("/health", dependencies=[Depends(require_roles("viewer", "operator", "admin"))])
 async def get_health():
     """System health summary for the dashboard's status strip."""
     coordinator = get_coordinator()
@@ -46,21 +51,87 @@ async def get_health():
     return demo_system_health()
 
 
-@router.get("/health/startup")
+@router.get("/health/startup", dependencies=[Depends(require_roles("viewer", "operator", "admin"))])
 async def get_startup_health():
     """Startup verification summary for the protocol and ops review."""
     return await run_startup_health_check()
 
 
+@router.get("/admin/overview", dependencies=[Depends(require_roles("admin"))])
+async def get_admin_overview() -> AdminOverview:
+    settings = get_settings()
+    coordinator = get_coordinator()
+    live_incidents = coordinator.list_incidents()
+    startup_health = await run_startup_health_check()
+    incident_count = len(live_incidents)
+    pending_approvals = sum(1 for incident in live_incidents if incident.get("status") == "awaiting_approval")
+    monitored_servers = settings.monitored_servers
+
+    service_matrix = [
+        AdminServiceStatus(
+            name="Qwen Cloud",
+            status="Connected" if bool(settings.qwen_api_key) else "Needs attention",
+            detail="Qwen API key configured" if bool(settings.qwen_api_key) else "Add QWEN_API_KEY to .env",
+        ),
+        AdminServiceStatus(
+            name="PostgreSQL",
+            status="Configured" if bool(settings.database_url) else "Needs attention",
+            detail="Database URL available" if bool(settings.database_url) else "Set DATABASE_URL in .env",
+        ),
+        AdminServiceStatus(
+            name="Redis",
+            status="Configured" if bool(settings.redis_url) else "Needs attention",
+            detail="Redis URL available" if bool(settings.redis_url) else "Set REDIS_URL in .env",
+        ),
+        AdminServiceStatus(
+            name="Alibaba Cloud",
+            status="Ready" if bool(settings.alibaba_cloud_access_key) else "Demo mode",
+            detail="Cloud credentials detected" if bool(settings.alibaba_cloud_access_key) else "OSS/CloudMonitor fall back to demo paths",
+        ),
+        AdminServiceStatus(
+            name="WebSocket Stream",
+            status="Live",
+            detail=f"{incident_count} incident(s) currently tracked",
+        ),
+    ]
+
+    recent_signals = [check["name"] for check in startup_health.get("checks", []) if not check["ok"]][:4]
+    if not recent_signals:
+        recent_signals = ["No startup warnings", "All core modules imported cleanly"]
+
+    return AdminOverview(
+        environment=settings.environment,
+        apiPrefix=settings.api_prefix,
+        authEnabled=bool(settings.auth_enabled),
+        authMode="Protected" if bool(settings.auth_enabled) else "Open demo",
+        backendStatus="operational" if startup_health.get("ok", False) else "degraded",
+        startupOk=bool(startup_health.get("ok", False)),
+        startupCheckedAt=startup_health.get("checkedAt", datetime.now(timezone.utc).isoformat()),
+        qwenConfigured=bool(settings.qwen_api_key),
+        databaseConfigured=bool(settings.database_url),
+        redisConfigured=bool(settings.redis_url),
+        monitoredServers=monitored_servers,
+        agentCount=5,
+        activeIncidentCount=incident_count,
+        pendingApprovals=pending_approvals,
+        reportCount=len(demo_reports()),
+        memoryRecordCount=len(demo_memory_records()),
+        docsUrl="/docs",
+        supportedScenarios=["cpu_spike", "memory_leak", "disk_io", "connection_pool", "tls_failure"],
+        serviceMatrix=service_matrix,
+        recentSignals=recent_signals,
+    )
+
+
 # ── Agents ────────────────────────────────────────────────────────────────────
 
-@router.get("/agents")
+@router.get("/agents", dependencies=[Depends(require_roles("viewer", "operator", "admin"))])
 async def get_agents():
     """Current status of all five agents."""
     return demo_agents()
 
 
-@router.get("/agents/status")
+@router.get("/agents/status", dependencies=[Depends(require_roles("viewer", "operator", "admin"))])
 async def get_agents_status():
     """Alias matching Phase 2 checklist spec: /api/agents/status."""
     return demo_agents()
@@ -68,7 +139,7 @@ async def get_agents_status():
 
 # ── Incidents ─────────────────────────────────────────────────────────────────
 
-@router.get("/incidents")
+@router.get("/incidents", dependencies=[Depends(require_roles("viewer", "operator", "admin"))])
 async def get_incidents():
     """All incidents, live ones first if the orchestrator has any, else demo data."""
     coordinator = get_coordinator()
@@ -76,7 +147,7 @@ async def get_incidents():
     return live if live else demo_incidents()
 
 
-@router.get("/incidents/{incident_id}")
+@router.get("/incidents/{incident_id}", dependencies=[Depends(require_roles("viewer", "operator", "admin"))])
 async def get_incident(incident_id: str):
     coordinator = get_coordinator()
     incident = coordinator.get_incident(incident_id)
@@ -88,7 +159,7 @@ async def get_incident(incident_id: str):
     raise HTTPException(status_code=404, detail=f"Incident {incident_id} not found")
 
 
-@router.post("/incidents/{incident_id}/approve")
+@router.post("/incidents/{incident_id}/approve", dependencies=[Depends(require_roles("operator", "admin"))])
 async def approve_incident(incident_id: str):
     coordinator = get_coordinator()
     success = await coordinator.approve_and_execute(incident_id)
@@ -100,7 +171,7 @@ async def approve_incident(incident_id: str):
     return {"success": True}
 
 
-@router.post("/incidents/{incident_id}/reject")
+@router.post("/incidents/{incident_id}/reject", dependencies=[Depends(require_roles("operator", "admin"))])
 async def reject_incident(incident_id: str, payload: RejectionPayload):
     coordinator = get_coordinator()
     success = await coordinator.reject_remediation(incident_id, payload.reason)
@@ -167,7 +238,7 @@ SCENARIO_SNAPSHOTS: dict[str, dict] = {
 }
 
 
-@router.post("/simulate")
+@router.post("/simulate", dependencies=[Depends(require_roles("operator", "admin"))])
 async def simulate_incident(payload: SimulatePayload):
     """
     Trigger a simulated incident through the full agent pipeline.
@@ -203,23 +274,76 @@ async def simulate_incident(payload: SimulatePayload):
 
 # ── Memory ────────────────────────────────────────────────────────────────────
 
-@router.get("/memory")
+@router.get("/memory", dependencies=[Depends(require_roles("viewer", "operator", "admin"))])
 async def get_memory():
     """Patterns the Memory Agent has learned, for the Memory dashboard page."""
     return demo_memory_records()
 
 
+def _find_report_payload(report_id: str) -> dict[str, Any] | None:
+    for report in demo_reports():
+        if report["id"] == report_id or report["incidentId"] == report_id:
+            return report
+
+    coordinator = get_coordinator()
+    for incident in coordinator.list_incidents():
+        report = incident.get("report")
+        if not report:
+            continue
+        candidate_id = report.get("id") or incident.get("id")
+        if candidate_id == report_id or incident.get("id") == report_id:
+            payload = {**report}
+            payload.setdefault("id", f"rpt-{incident.get('id', 'live').lower()}")
+            payload.setdefault("incidentId", incident.get("id", "live"))
+            payload.setdefault("title", f"{incident.get('title', 'Incident')} — {incident.get('service', 'service')}")
+            payload.setdefault(
+                "generatedAt",
+                report.get("generatedAt") or incident.get("resolvedAt") or datetime.now(timezone.utc).isoformat(),
+            )
+            payload.setdefault("status", "final")
+            payload.setdefault("downtimeMinutes", incident.get("metrics", {}).get("downtimeMinutes", 0))
+            return payload
+    return None
+
+
 # ── Reports ───────────────────────────────────────────────────────────────────
 
-@router.get("/reports")
+@router.get("/reports", dependencies=[Depends(require_roles("viewer", "operator", "admin"))])
 async def get_reports():
     return demo_reports()
 
 
-@router.get("/reports/{report_id}/download")
+@router.get("/reports/{report_id}/download", dependencies=[Depends(require_roles("viewer", "operator", "admin"))])
 async def download_report(report_id: str):
     """
-    Placeholder for report export. In production this streams a PDF generated
-    via the pdf skill / reportlab and uploaded to OSS by AlibabaCloudService.upload_report.
+    Generate a PDF incident report and stream it to the browser.
+
+    If Alibaba Cloud credentials are configured, the same PDF is also uploaded
+    to OSS and the public URL is returned in an `X-OSS-URL` response header.
     """
-    raise HTTPException(status_code=501, detail="PDF export not yet wired to OSS in this build.")
+    report = _find_report_payload(report_id)
+    if report is None:
+        raise HTTPException(status_code=404, detail=f"Report {report_id} not found")
+
+    pdf_bytes = build_report_pdf(report)
+    headers = {
+        "Content-Disposition": f'inline; filename="{build_report_filename(report)}"',
+        "Cache-Control": "no-store",
+    }
+
+    try:
+        oss_url = await AlibabaCloudService().upload_report(
+            key=f"reports/{build_report_filename(report)}",
+            content=pdf_bytes,
+            content_type="application/pdf",
+        )
+    except AlibabaCloudNotConfiguredError:
+        oss_url = None
+    except Exception:
+        logger.exception("OSS upload failed for report %s", report_id)
+        oss_url = None
+
+    if oss_url:
+        headers["X-OSS-URL"] = oss_url
+
+    return Response(content=pdf_bytes, media_type="application/pdf", headers=headers)
