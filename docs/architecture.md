@@ -7,18 +7,44 @@ cloud infrastructure incidents with a human approval checkpoint before any actio
 runs against live servers, and persistent memory so recurring incidents can
 eventually skip that checkpoint entirely.
 
-```
-Presentation Layer (React + TS + Tailwind)
-        |
-API Gateway Layer (FastAPI)
-        |
-Orchestrator Layer
-   Coordinator -- Message Bus -- Human Checkpoint
-   Detective -> Diagnostician -> Remediation -> Reporter
-                       |
-                  Memory Agent
-        |
-Data Layer (PostgreSQL+pgvector, Redis, Alibaba Cloud, Qwen Cloud)
+```mermaid
+graph TD
+    UI[Presentation Layer<br>React + TS + Tailwind]
+    API[API Gateway Layer<br>FastAPI]
+    
+    subgraph Orchestrator Layer
+        Coord[Coordinator]
+        Bus((Message Bus<br>Redis Pub/Sub))
+        Human{Human<br>Checkpoint}
+    end
+    
+    subgraph Agents
+        Det(Detective)
+        Diag(Diagnostician)
+        Rem(Remediation)
+        Rep(Reporter)
+        Mem(Memory)
+    end
+    
+    subgraph Data Layer
+        DB[(PostgreSQL + pgvector)]
+        Cache[(Redis Cache)]
+        Cloud((Alibaba / Qwen Cloud))
+    end
+    
+    UI <--> API
+    API --> Coord
+    Coord <--> Bus
+    
+    Coord --> Det
+    Coord --> Diag
+    Coord --> Rem
+    Coord --> Rep
+    Coord --> Mem
+    
+    Det <--> Cloud
+    Mem <--> DB
+    Rem --> Human
 ```
 
 ## Why a Coordinator, not a fully decentralized agent swarm

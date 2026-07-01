@@ -1,14 +1,79 @@
 # Aegis
 
-An autonomous AI operations team that detects and fixes cloud server problems
-automatically — like a self-healing IT department.
+**Submission for the Qwen Cloud Hackathon (Track: Autopilot Agent)**
 
-Five agents work together: **Detective** monitors logs and metrics for
-anomalies, **Diagnostician** finds the root cause, **Remediation** proposes a
-fix (and only executes it after a human clicks Approve, or after the Memory
-Agent recognizes a high-confidence repeat of a past incident), **Reporter**
-writes the incident report, and **Memory** remembers every incident so the
-same problem gets fixed faster next time.
+Aegis is an autonomous AI operations team that detects and fixes cloud server problems automatically — like a self-healing IT department. 
+
+### Hackathon Submission Links
+- **[Watch the 3-Minute Video Demo](https://youtube.com/your-video-link-here)**
+- **[Proof of Alibaba Cloud Deployment](alibaba-cloud-proof.png)**
+- **[Detailed Architecture Document](docs/architecture.md)**
+
+## The Five Agents
+
+Five agents work together in a tightly orchestrated pipeline: 
+- **Detective** monitors logs and metrics for anomalies.
+- **Diagnostician** finds the root cause.
+- **Remediation** proposes a fix (and only executes it after a human clicks Approve, or after the Memory Agent recognizes a high-confidence repeat of a past incident).
+- **Reporter** writes the incident report.
+- **Memory** remembers every incident so the same problem gets fixed faster next time.
+
+## System Architecture
+
+```mermaid
+graph TD
+    subgraph Presentation Layer
+        UI[React + TS + Tailwind Dashboard]
+    end
+
+    subgraph API Gateway
+        API[FastAPI Backend]
+        WS[WebSocket Event Stream]
+    end
+
+    subgraph Orchestrator Layer
+        Coord[Coordinator]
+        Bus[Redis Message Bus]
+        Human[Human Checkpoint / Policy]
+    end
+
+    subgraph Agent Swarm
+        Det(Detective<br/>Qwen-Flash)
+        Diag(Diagnostician<br/>Qwen-Plus)
+        Rem(Remediation<br/>Qwen-Coder)
+        Rep(Reporter<br/>Qwen-Flash)
+        Mem(Memory<br/>Qwen-Plus)
+    end
+
+    subgraph Data & Infra
+        DB[(PostgreSQL + pgvector)]
+        Cache[(Redis)]
+        Cloud((Alibaba Cloud))
+    end
+
+    UI <--> API
+    UI <..> WS
+    API --> Coord
+    Coord <--> Bus
+    WS <.. Bus
+    
+    Coord --> Det
+    Coord --> Diag
+    Coord --> Rem
+    Coord --> Rep
+    Coord --> Mem
+    
+    Rem --> Human
+    Mem <--> DB
+    Det <--> Cloud
+```
+
+## Hackathon Judging Criteria Met
+
+1. **Innovation & AI Creativity (30%)**: Aegis employs a sophisticated, multi-agent deterministic pipeline connected via a Redis pub/sub message bus. It utilizes specialized Qwen models for different tasks (e.g., Qwen-Coder for bash scripts, Qwen-Flash for fast log scanning) and automatically falls back to faster models if one fails.
+2. **Technical Depth & Engineering (30%)**: Implements **LangChain** for orchestration, **pgvector** for mathematical semantic search of past incidents (with time-decaying confidence), and a robust React/TypeScript frontend with real-time WebSocket state updates.
+3. **Problem Value & Impact (25%)**: Solves a very real, high-stress problem (3 AM server outages) by drastically reducing MTTR (Mean Time To Recovery) while keeping human engineers safely in the loop for high-risk actions.
+4. **Presentation & Documentation (15%)**: Includes standalone demo capabilities, comprehensive `docs/`, and a pristine user interface.
 
 ## Why this matters
 

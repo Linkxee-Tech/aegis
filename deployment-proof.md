@@ -4,6 +4,8 @@
 
 This file documents the production deployment on Alibaba Cloud infrastructure.
 
+![Alibaba Cloud Deployment Proof](../alibaba-cloud-proof.png)
+
 ### Infrastructure Details
 
 | Component | Service | Region |
