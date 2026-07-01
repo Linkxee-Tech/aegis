@@ -17,7 +17,7 @@ Instead, you configure the webhook URL inside your **external tool's settings**:
 
 1. Find your Aegis deployment URL. Depending on where Aegis is hosted:
    - **Local Development**: `http://localhost:8000/api/webhook/incident`
-   - **Render / Cloud Deployment**: `https://<your-aegis-app>.onrender.com/api/webhook/incident`
+   - **Production Deployment**: `https://aegis-flax-nine.vercel.app/api/webhook/incident`
 2. Go to your external monitoring tool's Alert/Webhook configuration page.
 3. Paste the Aegis Webhook URL.
 4. Configure the payload to send JSON (e.g., `{"service": "payment", "cpu": 95}`).
