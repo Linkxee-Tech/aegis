@@ -46,7 +46,7 @@ class BaseAgent(ABC):
         
         # Bind tools if agent defines any
         if hasattr(self, "tools") and self.tools:
-            self.llm = self.llm.bind_tools(self.tools)
+            self.llm = self.llm.bind_tools(self.tools, strict=True)
 
         # Apply fallback to qwen-flash if primary model is not qwen-flash
         from backend.config.settings import get_settings
@@ -54,7 +54,7 @@ class BaseAgent(ABC):
         if self.model_name != settings.qwen_model_flash:
             fallback_llm = self.qwen.get_chat_model(settings.qwen_model_flash)
             if hasattr(self, "tools") and self.tools:
-                fallback_llm = fallback_llm.bind_tools(self.tools)
+                fallback_llm = fallback_llm.bind_tools(self.tools, strict=True)
             self.llm = self.llm.with_fallbacks([fallback_llm])
         
         # We define a base chain for JSON responses using LangChain
