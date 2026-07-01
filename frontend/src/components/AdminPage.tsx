@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useAdminOverview } from '@/hooks/useLiveData'
 import { useAuthSession } from '@/hooks/useAuthSession'
 import { cx, formatRelative } from '@/utils/format'
@@ -38,6 +38,13 @@ function StatusChip({ status }: { status: string }) {
 export function AdminPage() {
   const { adminOverview, isLive, loading, accessDenied, refresh } = useAdminOverview()
   const { token } = useAuthSession()
+  const [isRefreshing, setIsRefreshing] = useState(false)
+
+  const handleRefresh = async () => {
+    setIsRefreshing(true)
+    await refresh()
+    setTimeout(() => setIsRefreshing(false), 500)
+  }
 
   useEffect(() => {
     document.title = 'Aegis Admin'
@@ -94,13 +101,14 @@ export function AdminPage() {
         </div>
         <div className="flex flex-wrap gap-2">
           <button
-            onClick={refresh}
-            className="rounded-md border border-graphite-600 px-3.5 py-2 text-[13px] text-bone-300 hover:bg-graphite-800"
+            onClick={handleRefresh}
+            disabled={isRefreshing}
+            className="rounded-md border border-graphite-600 px-3.5 py-2 text-[13px] text-bone-300 hover:bg-graphite-800 disabled:opacity-50 transition-opacity"
           >
-            Refresh
+            {isRefreshing ? 'Refreshing...' : 'Refresh'}
           </button>
           <a
-            href={adminOverview.docsUrl}
+            href={import.meta.env.VITE_API_BASE_URL ? import.meta.env.VITE_API_BASE_URL.replace('/api', '') + '/docs' : '/docs'}
             target="_blank"
             rel="noreferrer"
             className="rounded-md bg-signal-remediation px-3.5 py-2 text-[13px] font-semibold text-graphite-950"
