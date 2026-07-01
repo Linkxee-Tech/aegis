@@ -223,6 +223,7 @@ locust -f tests/load_test.py --host http://localhost:8000
 - [`docs/api_reference.md`](docs/api_reference.md) — every REST endpoint and
   the WebSocket event schema
 - [`docs/deployment.md`](docs/deployment.md) — Alibaba Cloud deployment steps
+- [`docs/integrations.md`](docs/integrations.md) — how to connect external tools (Datadog), Slack, and Alibaba Cloud polling
 
 ## Technology stack
 
