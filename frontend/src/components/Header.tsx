@@ -6,7 +6,7 @@ interface HeaderProps {
   onTabChange: (tab: string) => void
 }
 
-const TABS = ['Dashboard', 'Incidents', 'Reports', 'Memory', 'Settings']
+const TABS = ['Dashboard', 'Incidents', 'Reports', 'Memory', 'Settings', 'Admin']
 
 function MenuIcon({ open }: { open: boolean }) {
   return (

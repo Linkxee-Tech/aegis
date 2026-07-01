@@ -272,6 +272,38 @@ async def simulate_incident(payload: SimulatePayload):
     }
 
 
+@router.post("/webhook/incident", dependencies=[Depends(require_roles("operator", "admin"))])
+async def inbound_webhook(payload: dict[str, Any]):
+    """
+    Inbound integration point for external monitoring tools (e.g. Datadog, CloudWatch).
+    Expects a JSON payload containing 'service', 'server', and metrics.
+    """
+    coordinator = get_coordinator()
+    server = payload.get("server", "unknown-server")
+    service = payload.get("service", "unknown-service")
+    
+    snapshot = {
+        "current_metrics": payload,
+        "baseline_metrics": {},
+        "recent_log_lines": [f"External webhook trigger received: {payload}"],
+    }
+
+    import asyncio
+    async def run():
+        try:
+            await coordinator.run_detection_cycle(
+                server=server,
+                service=service,
+                monitoring_snapshot=snapshot,
+            )
+        except Exception:
+            logger.exception("Webhook incident pipeline failed")
+
+    asyncio.create_task(run())
+
+    return {"success": True, "message": "Webhook accepted, Detective agent dispatched"}
+
+
 # ── Memory ────────────────────────────────────────────────────────────────────
 
 @router.get("/memory", dependencies=[Depends(require_roles("viewer", "operator", "admin"))])

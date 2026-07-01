@@ -10,8 +10,11 @@ stays ignorant of the others; the Coordinator is what makes them a team.
 import logging
 import time
 import uuid
+import httpx
 from datetime import datetime, timezone
 from typing import Any
+
+from backend.config.settings import get_settings
 
 from backend.agents.detective import DetectiveAgent
 from backend.agents.diagnostician import DiagnosticianAgent
@@ -277,6 +280,18 @@ class Coordinator:
         await self.bus.publish(TOPIC_REPORT_GENERATED, {"incidentId": incident_id, "report": report_data})
         await self.bus.publish(TOPIC_INCIDENT_UPDATED, incident)
         await self._publish_agent_status("reporter", "idle")
+
+        # --- Outbound Webhook (Slack) ---
+        settings = get_settings()
+        if settings.slack_webhook_url:
+            try:
+                slack_payload = {
+                    "text": f"✅ *Incident {incident_id} Resolved*\n*Service*: {incident['service']}\n*Root Cause*: {incident['rootCause']}\n*Downtime*: {downtime_minutes} mins\n_Aegis automatically tracked and generated a report for this event._"
+                }
+                async with httpx.AsyncClient() as client:
+                    await client.post(settings.slack_webhook_url, json=slack_payload, timeout=5.0)
+            except Exception:
+                logger.exception(f"Failed to push Slack webhook for {incident_id}")
 
     # --- helpers ---
 

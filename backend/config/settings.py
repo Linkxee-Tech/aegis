@@ -60,6 +60,9 @@ class Settings(BaseSettings):
     approval_timeout_seconds: int = 900
     require_approval_for_high_risk: bool = True
 
+    # --- Outbound Webhooks ---
+    slack_webhook_url: str = Field(default="", description="Webhook URL for sending incident resolution notifications to Slack or Teams.")
+
     # --- Monitoring sources (Detective Agent) ---
     monitored_servers: list[str] = Field(default_factory=list)
     poll_interval_seconds: int = 15
