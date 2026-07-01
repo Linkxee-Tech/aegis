@@ -18,7 +18,7 @@ class QwenClient:
     def get_chat_model(self, model: str, temperature: float = 0.2) -> ChatOpenAI:
         """Returns a LangChain ChatOpenAI instance configured for Qwen Cloud."""
         return ChatOpenAI(
-            api_key=settings.qwen_api_key,
+            api_key=settings.qwen_api_key or "demo-mode-key-not-set",
             base_url=settings.qwen_api_base,
             model=model,
             temperature=temperature,
