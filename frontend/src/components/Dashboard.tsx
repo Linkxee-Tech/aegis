@@ -1,4 +1,5 @@
 import { useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { SystemHealthBar } from './SystemHealthBar'
 import { AgentStatusGrid } from './AgentStatus'
 import { ActiveIncidentPanel } from './ActiveIncidentPanel'
@@ -17,6 +18,7 @@ const WS_BASE =
   `ws://${typeof window !== 'undefined' ? window.location.host : 'localhost:8000'}`
 
 export function Dashboard() {
+  const navigate = useNavigate()
   const { incidents, isLive: incidentsLive, approve, reject, refresh: refreshIncidents } = useIncidents()
   const { agents } = useAgents()
   const { systemHealth } = useSystemHealth()
@@ -83,7 +85,18 @@ export function Dashboard() {
     <div className="mx-auto max-w-7xl space-y-5 px-4 py-6 sm:px-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <SystemHealthBar health={systemHealth} />
-        <SimulateIncident isLive={incidentsLive} onTriggered={showToast} />
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => navigate('/integrations')}
+            className="flex items-center gap-1.5 rounded-md border border-graphite-600 bg-graphite-800 px-3 py-1.5 text-[12px] font-medium text-bone-300 transition-colors hover:bg-graphite-700 hover:text-bone-100"
+          >
+            <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+            </svg>
+            Integration Guide
+          </button>
+          <SimulateIncident isLive={incidentsLive} onTriggered={showToast} />
+        </div>
       </div>
       <AgentStatusGrid agents={agents} />
 
