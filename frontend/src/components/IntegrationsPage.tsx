@@ -21,7 +21,7 @@ export function IntegrationsPage() {
         <div className="mt-4 rounded-md border border-graphite-700 bg-graphite-950 p-4">
           <p className="text-[12.5px] font-medium text-bone-300">Your Webhook URL</p>
           <code className="mt-2 block rounded bg-graphite-800 px-3 py-2 text-[12px] text-bone-100">
-            https://aegis-flax-nine.vercel.app/
+            https://aegis-flax-nine.vercel.app/api/webhook/incident
           </code>
           <p className="mt-3 text-[12.5px] text-bone-500">
             Paste this URL into your external monitoring tool's webhook configuration. Aegis expects a standard JSON payload.

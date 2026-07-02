@@ -33,7 +33,7 @@ export function WebhookConfigPanel() {
     }
   }
 
-  const inboundUrl = 'https://aegis-flax-nine.vercel.app/'
+  const inboundUrl = 'https://aegis-flax-nine.vercel.app/api/webhook/incident'
 
   return (
     <section className="mt-6 rounded-2xl border border-graphite-700 bg-graphite-900 p-5">
