@@ -26,6 +26,7 @@ from backend.config.settings import get_settings
 from backend.orchestrator.coordinator import get_coordinator
 from backend.services.auth import require_roles
 from backend.services.alibaba_cloud import AlibabaCloudNotConfiguredError, AlibabaCloudService
+from backend.services.db import get_app_setting, set_app_setting
 from backend.services.report_export import build_report_filename, build_report_pdf
 from backend.services.startup_health import run_startup_health_check
 
@@ -387,3 +388,21 @@ async def download_report(report_id: str):
         headers["X-OSS-URL"] = oss_url
 
     return Response(content=pdf_bytes, media_type="application/pdf", headers=headers)
+
+
+# ── Configuration ─────────────────────────────────────────────────────────────
+
+class WebhookConfigPayload(BaseModel):
+    slack_webhook_url: str
+
+@router.get("/config/webhooks", dependencies=[Depends(require_roles("admin"))])
+async def get_webhook_config():
+    val = await get_app_setting("slack_webhook_url", default="")
+    if not val:
+        val = get_settings().slack_webhook_url
+    return {"slack_webhook_url": val}
+
+@router.post("/config/webhooks", dependencies=[Depends(require_roles("admin"))])
+async def set_webhook_config(payload: WebhookConfigPayload):
+    await set_app_setting("slack_webhook_url", payload.slack_webhook_url)
+    return {"success": True}

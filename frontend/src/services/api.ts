@@ -129,6 +129,12 @@ export const api = {
       ossUrl: res.headers.get('x-oss-url'),
     }
   },
+  getWebhookConfig: () => request<{ slack_webhook_url: string }>('/config/webhooks'),
+  setWebhookConfig: (slackWebhookUrl: string) =>
+    request<{ success: boolean }>('/config/webhooks', {
+      method: 'POST',
+      body: JSON.stringify({ slack_webhook_url: slackWebhookUrl }),
+    }),
 }
 
 export { ApiError }

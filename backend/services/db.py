@@ -85,6 +85,13 @@ DROP TRIGGER IF EXISTS incidents_updated_at ON incidents;
 CREATE TRIGGER incidents_updated_at
     BEFORE UPDATE ON incidents
     FOR EACH ROW EXECUTE FUNCTION set_updated_at();
+
+-- ── app_settings ─────────────────────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS app_settings (
+    key TEXT PRIMARY KEY,
+    value TEXT NOT NULL,
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
 """
 
 
@@ -101,3 +108,29 @@ async def run_migrations(dsn: str | None = None) -> None:
             "Database migration failed — check DATABASE_URL and that the postgres service is running. "
             "The API will continue starting but persistence features won't work."
         )
+
+
+async def get_app_setting(key: str, default: str = "") -> str:
+    _dsn = settings.database_url.replace("postgresql+asyncpg://", "postgresql://")
+    try:
+        conn = await asyncpg.connect(_dsn)
+        val = await conn.fetchval("SELECT value FROM app_settings WHERE key = $1", key)
+        await conn.close()
+        return val if val is not None else default
+    except Exception:
+        return default
+
+
+async def set_app_setting(key: str, value: str) -> None:
+    _dsn = settings.database_url.replace("postgresql+asyncpg://", "postgresql://")
+    try:
+        conn = await asyncpg.connect(_dsn)
+        await conn.execute(
+            """INSERT INTO app_settings (key, value, updated_at) 
+               VALUES ($1, $2, now()) 
+               ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = now()""",
+            key, value
+        )
+        await conn.close()
+    except Exception:
+        logger.exception(f"Failed to save setting {key}")

@@ -3,6 +3,7 @@ import { useAdminOverview } from '@/hooks/useLiveData'
 import { useAuthSession } from '@/hooks/useAuthSession'
 import { cx, formatRelative } from '@/utils/format'
 import { IconAlertTriangle, IconCheck, IconClock, IconLock, IconServer, IconShield } from './icons'
+import { WebhookConfigPanel } from './WebhookConfigPanel'
 
 function StatCard({
   label,
@@ -203,6 +204,8 @@ export function AdminPage() {
           </div>
         </section>
       </div>
+
+      <WebhookConfigPanel />
     </div>
   )
 }
