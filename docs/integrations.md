@@ -54,7 +54,7 @@ ALIBABA_CLOUD_REGION=ap-southeast-1
 2. Enable **Incoming Webhooks** in the app settings.
 3. Click **Add New Webhook to Workspace** and authorize it for your desired channel (e.g., `#incidents`).
 4. Copy the generated Webhook URL (it will look like `https://hooks.slack.com/services/T...`).
-5. Open your `backend/.env` file and add the URL:
+5. Open your `http://localhost:3000/admin` file and save the URL:
 
 ```env
 SLACK_WEBHOOK_URL=https://hooks.slack.com/services/YOUR_WORKSPACE/YOUR_CHANNEL/YOUR_SECRET
