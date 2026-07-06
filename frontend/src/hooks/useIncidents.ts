@@ -24,6 +24,7 @@ export function useIncidents() {
     try {
       const data = await api.getIncidents()
       if (data?.length) {
+        data.sort((a, b) => new Date(b.detectedAt).getTime() - new Date(a.detectedAt).getTime())
         setIncidents(data)
         setIsLive(true)
       }
