@@ -7,6 +7,7 @@ import { MemoryPage } from './components/MemoryPage'
 import { SettingsPage } from './components/SettingsPage'
 import { AdminPage } from './components/AdminPage'
 import { IntegrationsPage } from './components/IntegrationsPage'
+import { UserGuidePage } from './components/UserGuidePage'
 
 const TAB_TO_PATH: Record<string, string> = {
   Dashboard: '/',
@@ -23,6 +24,7 @@ const PATH_TO_TAB: Record<string, string> = {
   '/reports': 'Reports',
   '/memory': 'Memory',
   '/integrations': 'Integrations',
+  '/guide': 'Guide',
   '/settings': 'Settings',
   '/admin': 'Admin',
 }
@@ -45,6 +47,7 @@ function AppShell() {
         <Route path="/reports" element={<ReportsPage />} />
         <Route path="/memory" element={<MemoryPage />} />
         <Route path="/integrations" element={<IntegrationsPage />} />
+        <Route path="/guide" element={<UserGuidePage />} />
         <Route path="/settings" element={<SettingsPage />} />
         <Route path="/admin" element={<AdminPage />} />
         <Route path="*" element={<Navigate to="/" replace />} />
