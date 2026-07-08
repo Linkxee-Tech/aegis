@@ -110,7 +110,7 @@ cd ..
 python -m venv venv
 source venv/bin/activate  # or venv\Scripts\activate on Windows
 pip install -r requirements.txt
-python backend/main.py
+python main.py
 
 # 5. Frontend setup (new terminal)
 cd frontend
